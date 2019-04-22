@@ -1,7 +1,7 @@
-#Intro to C++ Inheritance & Polymorphism
-####本文关键词：Inheritance、Polymorphism、Abstract base classes
+# Intro to C++ Inheritance & Polymorphism
+#### 本文关键词：Inheritance、Polymorphism、Abstract base classes
 
-###First: Inheritance继承
+### First: Inheritance继承
 子类从基类继承characteristics和behaviors
 
 Access control访问控制符
@@ -9,7 +9,7 @@ Access control访问控制符
 `protected`: accessible inside the class and by all of the subclasses
 `private`: access only inside the class, **NOT** including its subclasses
 
-######基类MITPerson
+###### 基类MITPerson
 ```
 @filename: MITPerson.h
 #include<string>
@@ -40,7 +40,7 @@ std::cout << "-----------------------------\n";
 
 ```
 
-######子类Student
+###### 子类Student
 ```
 @filename: Student.h
 #include<iostream>
@@ -85,7 +85,7 @@ Class* c = *it;
 
 }
 ```
-######使用
+###### 使用
 ```
 MITPerson* john =
 new MITPerson(901289, “John Doe”, “500 Massachusetts Ave.”);
@@ -109,7 +109,7 @@ Classes taken:
 ```
 
 ***
-###Second: Polymorphism多态
+### Second: Polymorphism多态
 Ability of type A to appear as and be used like another
 type B
 每个变量在compile-time都有一个declared type
@@ -124,7 +124,7 @@ Name: Steve ID: 911923 Address: 99 Cambridge St.
 ```
 为什么没有调用重载后的displayProfile函数呢？
 
-######Virtual functions虚函数
+###### Virtual functions虚函数
 用virtual关键字声明虚函数
 ```
 class MITPerson{
@@ -154,18 +154,18 @@ Classes taken:
 ![virtual table](./virtual_table.png "virtual table")
 >changeAddress被声明为virtual但是没有被重载
 
-######Virtual destructor
+###### Virtual destructor
 基类中的析构函数应该被声明为virtual吗？
 >Yes! We must always clean up the mess created in the
 >subclass (otherwise, risks for memory leaks!)
 `MITPerson::~MITPerson(){}`
 
-######Virtual constructor
+###### Virtual constructor
 我们能把构造函数声明为virtual吗？
 >No, not in C++. To create an object, you must know its exact type.`
 
 
-######Type casting
+###### Type casting
 ```
 MITPerson* steve =
 new Student(911923, "Steve", "99 Cambridge St.", 18, 3);
@@ -184,7 +184,7 @@ dynamic_cast<Student>*(steve);
 steve2->addClassTaken(c1); // OK
 ```
 
-######Static vs. dynamic casting 
+###### Static vs. dynamic casting
 
 我们也能用`static_cast<...>`
 `Student* steve2 = static_cast<Student>*(steve);`
@@ -198,7 +198,7 @@ Student* s2 = dynamic_cast<Student>*(p); // s2 is set to NULL
 只有当你知道自己在做什么时，才能使用`static_cast<...>`
 ***
 
-###Third: Absstract base class抽象基类
+### Third: Absstract base class抽象基类
 有时，你只想继承声明而非定义
 不带有实现的方法被称为抽象方法
 抽象方法常常被用来创建接口

@@ -1,4 +1,4 @@
-#深入理解Malloc和New
+# 深入理解Malloc和New
 
 C语言是imperative和compiled的，需要手动管理内存
 C语言允许程序员是在heap上分配额外的内存，可以把heap想象成一个巨大的数组，我们可以用指针操作heap
@@ -14,13 +14,13 @@ C函数在stack上分配内存，当函数执行时推入stack，函数返回时
 回收内存|函数返回时|用free
 分配地址|静态地|动态地
 
-######Allocation
+###### Allocation
 `int* p = malloc(sizeof(int))`
-######Statically allocated arrays
+###### Statically allocated arrays
 `int arr[5]; arr[1] = 6;`
-######Dynamically allocated arrays
+###### Dynamically allocated arrays
 `int* arr; arr = malloc(sizeof(int)*5); arr[1] = 5;`
-######Defining a struct
+###### Defining a struct
 ```
 struct pair{
 	int first;
@@ -36,7 +36,7 @@ struct pair* pp = malloc(sizeof(struct pair));
 (*pp).first = 2;
 pp->second = 3;
 ```
-######typedef
+###### typedef
 ```
 typedef struct pair pair_t;
 pair_t p;
@@ -46,10 +46,10 @@ typedef struct pair{
     int second;
 }pair_t;
 ```
-######Deallocation
+###### Deallocation
 `free(p)`
 
-####Singly linked list
+#### Singly linked list
 ![link list](./img/link.png "link list")
 
 ```
@@ -99,7 +99,7 @@ node_t* delete_val(int val, node_t* cur_head, int* succeeded){
 ```
 
 
-####Memory errors
+#### Memory errors
 ```
 int* i = NULL;
 *i = 3;                  //Segmentation fault
@@ -119,7 +119,7 @@ int* i = NULL;
 free(i);              //Freeing NULL does nothing
 ```
 
-####Buggy Example
+#### Buggy Example
 ```
 int* get_array(int* len){
 	*len = 3;
@@ -137,7 +137,7 @@ int main(){
 }
 ```
 
-####In-place linked list reversal
+#### In-place linked list reversal
 ```
 Element* reverse(Element *pHead){
 	if(pHead == NULL || pHead->next == NULL) return pHead;
