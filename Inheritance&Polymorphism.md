@@ -151,7 +151,9 @@ Classes taken:
 1、存储指向所有虚函数的指针
 2、创建每个类
 3、在函数执行时查找对应function
-![virtual table](./virtual_table.png "virtual table")
+
+![virtual table](./img/virtual_table.png "virtual table")
+
 >changeAddress被声明为virtual但是没有被重载
 
 ###### Virtual destructor
