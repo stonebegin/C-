@@ -152,3 +152,34 @@ Element* reverse(Element *pHead){
     return pRev;
 }
 ```
+
+### Struct Memory & Unions Memory
+>Struct size != sum of member sizes
+>All members must "algin" with largest member size
+>Each member has own alignment requirements
+
+###### Blackboard Example:
+```
+struct X{
+	char a;   //1-byte, must be 1-byte aligned
+	short b;  //2-bytes, must be 2-byte aligned
+	int c;    //Biggest member (4-bytes).X must be 4-byte aligned
+	char d;
+}
+```
+
+>Can only access one member at a time.Union stores all data in same chunk of memory
+
+```
+union data{
+	int x; char y;
+};
+union data mydata;
+mydata.y = 'a';
+mydata.x = 1;
+printf("%d\n", mydata.x)     //Will print out 1
+```
+###### Union的用处：
+1、创建别名。别名是内存对象原名之外的其他名字。比如在程序中经常会用到将一个数据类型强制转换为另一个类型，这个操作可以使用联合来代替。
+2、使用联合来将较大的对象分解成组成这个对象的各个字节。（尤其在单片机编程中将float拆解成char)
+
