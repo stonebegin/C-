@@ -1,0 +1,172 @@
+iterms 01: 视C++为一个语言联邦
+    C, Object-Oriented C++, Template C++, STL;
+
+iterms 02: 尽量以const, enum, inline替换#define
+    (1)：#define ASPECT_RATIO 1.653;
+    ASPECT_RATIO在编译之前被预处理器全部替换成1.653， ASPECT_RATIO也许不会进入Symbol table，
+    当发生错误时，错误信息也许会提到1.653，而不是ASPECT_RATIO，很难进行追踪。
+
+    (2)：使用#define无法定义一个专属于Class的常量，因为一旦宏被定义，在其后的编译过程中都有效，不
+    能提供任何封装性。
+    class CostEstimate{
+        private:
+            static const double FudgeFactor;      //static class常量声明
+            ...                                   //位于头文件内
+    };
+
+    const double
+        CostEstimate::FudgeFactor = 1.35          //static class常量定义
+                                                  //位于实现文件内
+
+    【注】编译器不允许static int型class常量完成in-class初值设定时（类内初始化），可改用the enum hack
+    理论基础：一个枚举类型的数值可充当int使用。
+    class Game {
+        private:
+            static const int GameTurn = 10;
+            int scores[GameTurn];
+    };                     //不支持类内初始化的编译器报错
+    class GamePlayer{
+        private:
+            enum {NumTurns = 5};
+
+            int scores[NumTurns];
+            ...
+    };                     //不支持类内初始化的编译器也能编译通过
+
+    使用enum hack的好处：
+    1.enum hack的行为更像#define而不是const，如果你不希望别人得到你的常量成员的指针或引用，你可以用enum hack替代之。
+    （为什么不直接用#define呢？首先，因为#define是字符串替换，所以不利于程序调试。其次，#define的可视范围难以控制，
+    比如你怎么让#define定义的常量只在一个类内可见呢？除非你用丑陋的#undef。
+    2.使用enum hack不会导致 “不必要的内存分配”。
+    3.enum hack是模板元编程的一项基本技术，大量的代码在使用它。当你看到它时，你要认识它。
+
+    (3)宏有很多缺点，让人痛苦不堪，例如：
+    #define max(a, b) a > b ? a : b
+    看似正确的写法实则漏洞百出，比如我们这样使用：
+
+    int a = 1, b = 3, c;
+    c = ++max(a, b);
+
+    本意是要a 和 b 中最大值加 1 后的结果赋给 c ，实际经过预处理之后，代码变成了：
+
+    c = ++ a > b ? a : b;
+    c 的最后结果是 3 ，而非我们想要的 4。
+    所以记得要给宏中的所有实参加上小括号！！！如：
+    #define max(a, b) (((a) > (b)) ? (a) : (b))
+    即是这样，还是会发生一些意想不到的问题。
+
+    比如：
+    int a = 5, b = 0;
+    max(++a, b);		//a被累加二次
+    max(++a, b + 10);	//a被累加一次
+    a 的累加次数竟然取决于“它被拿来和谁比较”。
+    此时，你需要 inline 来解决此问题：
+
+    template <typename T>
+    inline T max(const &T a, const &T b)    //由于我们不知道 T 是什么，所以用 pass by reference-to-const
+    {
+        return (a > b ? a : b);
+    }
+
+    总结——请记住：
+    1）对于单纯变量，最好以 const 对象或 enum 替换 #define；
+    2）对于形似函数的宏，最好改用 inline 函数替换 #define。
+
+iterms 03：尽可能使用const
+
+    1.const和指针
+
+    char greeting[] = "Hello";
+    char* p = greeting;
+    const char* p = greeting;            //non-const pointer, const data
+    char* const p = greeting;            //const pointer, non-const data
+    const char* const p = greeting;      //const pointer, const data
+    【注】const出现在 * 左边，表示被指物是常量；如果出现在 * 右边，表示指针自身是常量；
+    如果出现在 * 两边，表示被指物和指针都是常量。
+    void f1(const Widget* pw);
+    void f2(Widget const * pw);
+    两种写法意义相同。
+
+    2.const和迭代器
+
+    声明迭代器为const就像声明指针为const一样，表示这个迭代器不得指向不同的东西
+    如果你希望迭代器所指的东西不可改动，你需要的是const_iterator
+    std::vector<int> vec;
+    ...
+    const std::vector<int>::iterator iter = vec.begin();
+    *iter = 10;                       //OK，改变iter的值
+    ++iter;                           //Error， iter是const
+
+    std::vector<int>::const_iterator cIter = vec.begin();
+    *cIter = 10;                      //Error，*cIter是const
+    ++cIter;                          // OK，改变cIter
+
+    3.令函数返回一个常量值，可以防止 if(a * b = c) 这样“没意思的赋值动作“
+
+    4.bitwise const和logical const
+
+    bitwise const认为，成员函数只有在不更改对象的任何成员变量时才可以说是const，也就是它不更改对象内的任何一个bit。 
+    bitwise const正是c++对常量性的定义，因此const成员函数不能更改对象内任何non-static成员变量。 
+    logical const认为，一个const函数可以修改它所处理的对象内的某些bits，但只能在客户侦查不出的情况下。
+    看下面的例子：
+    class Text {
+        public:
+            std::size_t length() const;
+        private:
+            char* pText;
+            std::size_t textLength;
+            bool lengthValid;
+    };
+
+    std::size_t Text::length() const {
+        if (!lengthValid) {  //错误，在const函数内给textLength和lengthValid赋值
+            textLength = std::strlen(pText);
+            lengthValid = true;
+        }
+        return textLength;
+    }
+    在这个例子中虽然textLength、lengthValid的赋值是可以接受的，但是不能通过bitwsie const的编译器。 
+    如果要使textLength、lengthValid可以修改，需要用mutable释放掉non-static成员变量的bitwise const约束：
+    ...
+    private:
+        mutable std::size_t textLength;
+        mutable bool lengthValid;
+    ...
+
+    5.在const和non-const成员函数中避免重复
+
+    因为需要为const和non-const对象都提供一个功能相同的函数，但是很可能这两个函数只有返回类型是否有const修饰不同，
+    此时为了避免代码重复带来的编译时间、维护、代码膨胀等问题，可以让non-const函数调用const函数：
+    class TextBlock{
+        public:
+            ...
+
+            const char& operator[] (std::size_t position) const {
+                ...
+                ...
+                return text[position];
+            }
+
+            char& operator[] (std::size_t position) {
+                ...
+                return const_cast<char&>(
+                    static_cast<const TextBlock&>(*this)[posistion]
+                    );
+            }
+    }
+
+    【注】const_cast转换符是用来移除变量的const或volatile限定符。
+        const int constant = 21;
+        const int* const_p = &constant;
+        int* modifier = const_cast<int*>(const_p);
+        *modifier = 7;
+
+    const_cast实现原因就在于C++对于指针的转换是任意的，它不会检查类型，任何指针之间都可以进行互相转换，
+    因此const_cast就可以直接使用显示转换(int*)来代替：
+        const int constant = 21;
+        const int* const_p = &constant;
+        int* modifier = (int*)(const_p);
+
+    或者我们还可以把他们合成一个语句，跳过中间变量，用
+        const int constant = 21;
+        int* modifier = (int*)(&constant);

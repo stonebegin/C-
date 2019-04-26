@@ -1,0 +1,111 @@
+iterms 04：确定对象被使用前已先被初始化
+    
+    1.变量初始化：
+    对于无任何成员的内置类型，你必须手工完成初始化工作，如果忘记初始化化又使用了它，可能会发生意想不到的事情
+
+    2.构造函数初始化：确保每一个构造函数都将对象的每个成员初始化
+    class PhoneNumber{...};
+    class ABEntry{
+        public:
+            ABEntry(const std::string& name, const std::string& address, 
+                const std::list<PhoneNumber>& phones);
+            
+        private:
+            std::string theName;
+            std::string theAddress;
+            std::list<PhoneNumber> thePhones;
+            int numTimesConsulted;
+    };
+
+    ABEntry::ABEntry(const std::string& name, const std::string& address, 
+                const std::list<PhoneNumber>& phones){
+        theName = name;
+        theAddress = address;                 //这些都是赋值，而非初始化
+        thePhones = phones;
+        numTimesConsulted = 0;
+    }
+
+    ABEntry构造函数的一个较佳写法是，使用列表初始化(member initialization list)替换赋值动作：
+    ABEntry::ABEntry(const std::string& name, const std::string& address, 
+            const std::list<PhoneNumber>& phones)
+        :theName(name),
+        theAddress(address),
+        thePhones(phones),
+        numTimesConsulted(0)
+    { }
+    因为对于string类型的name，它必须先调用string的default构造函数，然后再赋予新的值（copy assignment），
+    这样default构造函数所做的事情全部浪费，而列表初始化就省去了调用default构造函数。不过对于内置类型来说，赋值与初始化列表的性能差异几乎没有。
+
+    3.Singleton模式：
+    class FileSystem{
+        public:
+            ...
+            std::size_t numDisks() const;
+            ...
+    };
+    extern FileSystem tfs;
+
+    class Directory{
+        public:
+            Directory(params);
+            ...
+    };
+    Directory::Directory(params)
+    {
+        ...
+        std::size_t disks = tfs.numDisks();
+    }
+    Directory tempDir(params);
+    除非tfs在tempDir之前先被初始化，否则tempDir的构造函数会用到尚未初始化的tfs。
+    可以借用SingleTon模式解决次问题。
+
+    class FileSystem {....};
+    FileSystem& tfs(){
+        static FileSystem fs;
+        return fs;
+    }
+    class Directory{...}
+    Directory::Directory (params){
+        ...
+        std::size_t disks = tfs().numDisks();
+        //使用static对象的references，而不再使用static对象自身，这样可以保证获得的reference
+        将指向一个历经初始化的对象。
+    }
+    Directory& tempDir(){
+        static Directory td;
+        return td;
+    }
+    但是从另一个角度看，这些函数"内含static对象"的事实使它们在多线程系统中带有不确定性。任何一种
+    non-const static 对象，不论它是local或non-local，在多线程环境下"等待某事发生"都会有麻烦。
+    处理这个麻烦的一种做法是：在程序的单线程启动阶段（single-threaded startup portion）手工调用
+    所有reference-returning函数，这可消除与初始化有关的"竞速形势（race conditions）"。
+
+    总结：
+        为内置型对象进行手工初始化，因为C++不保证初始化它们。
+        构造函数最好使用成员初值列（member initialization list），而不要在构造函数本体内
+        使用赋值操作（assignment）。初值列列出的成员变量，其排列次序应该和它们在class中的声明次序相同。
+        为免除"跨编译单元的初始化次序"问题，请以local static对象替换non-local static对象。
+
+
+Iterms 05：了解C++默默编写并调用哪些函数
+    如果写下：
+    class Empty { };
+    就好像写下了这样的代码：
+    class Empty{
+        public:
+            Empty() {...}                             //default构造函数
+            Empty(const Empty& rhs){...}              //copy构造函数
+            ~Empty(){...}                             //析构函数
+
+            Empty& operator={const Empty& rhs}{...}   //copy assignment操作符
+    }
+
+    下列三种情况，C++会“无能为力”
+    1.打算在一个“内涵reference成员”的 class 内支持 赋值操作，这样情况，必须自己定义copy assignment操作符
+    2.面对“内含const成员”的classes，编译器的反应也一样，因为更改const成员是不合法的。
+    3.如果某个 base classes 将copy assignment操作符声明为 private，编译器将拒绝为其 
+      derived classes 生成 copy assignment 操作符。
+
+Iterms 06：若不想使用编译器自动生成构造函数，就该明确拒绝
+    为了阻止编译器 自动（或者说是 暗自） 提供的机能，可将相应的成员函数声明为private 并且不予以实现，
+    也可以使用上述的Uncopyable这样的基类来解决。
